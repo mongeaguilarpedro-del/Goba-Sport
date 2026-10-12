@@ -5,43 +5,38 @@ import sqlite3
 import streamlit as st
 
 
-# Función para cargar imagen local como fondo en CSS
-def get_base64_image(image_path):
-  if os.path.exists(image_path):
-    with open(image_path, "rb") as img_file:
-      return base64.b64encode(img_file.read()).decode()
+# --- FUNCIÓN PARA CARGAR LA IMAGEN DE FONDO LOCAL EN BASE64 ---
+def obtener_base64_imagen(ruta_imagen):
+  if os.path.exists(ruta_imagen):
+    with open(ruta_imagen, "rb") as f:
+      data = f.read()
+    return base64.b64encode(data).decode("utf-8")
   return None
 
 
-# Buscador de logo
+# --- BUSCADOR ROBUSTO DE LOGO ---
 logo_encontrado = None
-try:
-  for archivo in os.listdir("."):
-    if archivo.lower().startswith("logo"):
-      logo_encontrado = archivo
-      break
-except Exception:
-  pass
+for archivo in os.listdir("."):
+  if archivo.lower().startswith("logo"):
+    logo_encontrado = archivo
+    break
 
-# Configuración de página
+# --- CONFIGURACIÓN DE PÁGINA ---
 st.set_page_config(
     page_title="GOBA Sport",
     page_icon=logo_encontrado if logo_encontrado else "🏆",
     layout="wide",
 )
 
-# Carga de fondo local o fallback web con un estadio de fútbol profesional muy llamativo
-bg_base64 = get_base64_image("fondo_estadio.jpg")
-if not bg_base64:
-  bg_base64 = get_base64_image("fondo_estadio.png")
+# --- CARGAR FONDO LOCAL ---
+fondo_b64 = obtener_base64_imagen("fondo_pantalla.jpg")
 
-if bg_base64:
-  bg_css = f"data:image/jpg;base64,{bg_base64}"
+if fondo_b64:
+  css_fondo = f"url('data:image/jpg;base64,{fondo_b64}')"
 else:
-  # Fondo de estadio de alta calidad y impacto visual
-  bg_css = "https://images.unsplash.com/photo-1518063319789-7217e6adc85e?q=80&w=1920&auto=format&fit=crop"
+  css_fondo = "url('https://i.ibb.co/8gy7GQWY/fondo_pantalla.jpg')"
 
-# Estilos CSS avanzados con tipografía Inter y el fondo deportivo
+# --- ESTILOS CSS: FONDO DE PANTALLA COMPLETO AJUSTADO A LOS BORDES ---
 st.markdown(
     f"""
     <style>
@@ -51,26 +46,29 @@ st.markdown(
         font-family: 'Inter', sans-serif;
     }}
 
+    /* Fondo de pantalla ajustado a 100% 100% para mostrar toda la imagen sin recortes */
     .stApp {{
-        background-color: #0d1117;
-        background-image: linear-gradient(rgba(13, 17, 23, 0.82), rgba(13, 17, 23, 0.90)), 
-                          url('{bg_css}');
-        background-size: cover;
-        background-position: center;
-        background-attachment: fixed;
-        color: #e6edf3;
+        background-color: #0d1117 !important;
+        background-image: linear-gradient(rgba(13, 17, 23, 0.65), rgba(13, 17, 23, 0.80)), 
+                          {css_fondo} !important;
+        background-size: 100% 100% !important; /* Estira la imagen para cubrir toda la pantalla mostrando todo el contenido */
+        background-position: center center !important;
+        background-repeat: no-repeat !important;
+        background-attachment: fixed !important;
+        color: #e6edf3 !important;
     }}
     
     section[data-testid="stSidebar"] {{
-        background-color: #161b22;
-        border-right: 1px solid #30363d;
+        background-color: rgba(22, 27, 34, 0.92) !important;
+        border-right: 1px solid #30363d !important;
     }}
 
-    div[data-testid="stVerticalBlock"] > div[style*="border"] {{
+    div[data-testid="stVerticalBlock"] > div[style*="border"], div.stContainer {{
         background-color: rgba(22, 27, 34, 0.85) !important;
         border: 1px solid #30363d !important;
         border-radius: 10px !important;
-        box-shadow: 0 8px 16px rgba(0,0,0,0.6);
+        box-shadow: 0 8px 16px rgba(0,0,0,0.7);
+        padding: 15px;
     }}
 
     .stButton button {{
@@ -98,7 +96,7 @@ st.markdown(
 )
 
 
-# Función para inicializar base de datos
+# --- INICIALIZAR BASE DE DATOS ---
 def init_db():
   conn = sqlite3.connect("indumentaria_clubes.db")
   cursor = conn.cursor()
@@ -129,13 +127,11 @@ def init_db():
 
 init_db()
 
-# Encabezado
+# --- ENCABEZADO ---
 col_head1, col_head2 = st.columns([3, 1])
 with col_head1:
   st.title("GOBA Sport")
-  st.caption(
-      "🏆 Indumentaria Deportiva Profesional para Clubes e Instituciones"
-  )
+  st.caption("🏆 Indumentaria Deportiva Profesional para Clubes e Instituciones")
 
 if logo_encontrado:
   st.sidebar.image(logo_encontrado, use_container_width=True)
@@ -144,7 +140,7 @@ else:
 
 st.sidebar.markdown("---")
 
-# Menú de navegación simplificado
+# Menú de navegación
 menu = [
     "⭐ Catálogo y Guía de Pedidos",
     "🛡️ Registrar Club",
@@ -154,7 +150,7 @@ menu = [
 choice = st.sidebar.selectbox("Menú de Navegación", menu)
 st.sidebar.markdown("---")
 
-# Número de WhatsApp configurado: 3533-680073
+# Número de WhatsApp configurado
 telefono_contacto = "5493533680073"
 mensaje_wa = "Hola! Te escribo desde GOBA Sport para consultar un pedido..."
 link_whatsapp = (
@@ -202,15 +198,14 @@ if choice == "⭐ Catálogo y Guía de Pedidos":
       st.markdown("#### 🎽 Equipaciones Oficiales")
       st.markdown(
           "- Camisetas Titulares y Suplentes\n- Shorts y Pantalones cortos\n-"
-          " Medias y conjuntos de arquero\n- *Telas antitranspirantes"
-          " Microfit.*"
+          " Medias y conjuntos de arquero\n*Telas antitranspirantes Microfit.*"
       )
   with col_cat2:
     with st.container(border=True):
       st.markdown("#### 🧥 Abrigo y Entrenamiento")
       st.markdown(
           "- Camperas de frisa / Impermeables\n- Buzos deportivos de salida\n-"
-          " Pantalones chupín y entrenamiento\n- *Acabados térmicos y de gran"
+          " Pantalones chupín y entrenamiento\n*Acabados térmicos y de gran"
           " durabilidad.*"
       )
   with col_cat3:
