@@ -46,12 +46,11 @@ st.markdown(
         font-family: 'Inter', sans-serif;
     }}
 
-    /* Fondo de pantalla ajustado a 100% 100% para mostrar toda la imagen sin recortes */
     .stApp {{
         background-color: #0d1117 !important;
         background-image: linear-gradient(rgba(13, 17, 23, 0.65), rgba(13, 17, 23, 0.80)), 
                           {css_fondo} !important;
-        background-size: 100% 100% !important; /* Estira la imagen para cubrir toda la pantalla mostrando todo el contenido */
+        background-size: 100% 100% !important;
         background-position: center center !important;
         background-repeat: no-repeat !important;
         background-attachment: fixed !important;
@@ -116,8 +115,6 @@ def init_db():
             talle TEXT,
             estado TEXT,
             fecha TEXT,
-            precio_total REAL DEFAULT 0,
-            monto_pagado REAL DEFAULT 0,
             FOREIGN KEY(club_id) REFERENCES clubes(id)
         )
     """)
@@ -300,22 +297,13 @@ elif choice == "📋 Cargar Nuevo Pedido":
         cantidad = st.number_input(
             "📦 Cantidad total de unidades", min_value=1, value=10
         )
+
+      with col_b:
         talle = st.selectbox(
             "📏 Curva de talles / Detalle",
             ["S - M - L - XL", "Infantiles", "Mixto"],
         )
-
-      with col_b:
         fecha_entrega = st.date_input("📅 Fecha estimada requerida")
-        precio_total = st.number_input(
-            "💰 Presupuesto / Precio Total ($)",
-            min_value=0.0,
-            value=0.0,
-            step=1000.0,
-        )
-        monto_pagado = st.number_input(
-            "💵 Seña abonada ($)", min_value=0.0, value=0.0, step=1000.0
-        )
 
       submitted_pedido = st.form_submit_button(
           "🚀 Confirmar y Registrar Pedido", use_container_width=True
@@ -327,8 +315,8 @@ elif choice == "📋 Cargar Nuevo Pedido":
         cursor = conn.cursor()
         cursor.execute(
             """
-            INSERT INTO pedidos (club_id, tipo_prenda, cantidad, talle, estado, fecha, precio_total, monto_pagado) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO pedidos (club_id, tipo_prenda, cantidad, talle, estado, fecha) 
+            VALUES (?, ?, ?, ?, ?, ?)
             """,
             (
                 c_id,
@@ -337,8 +325,6 @@ elif choice == "📋 Cargar Nuevo Pedido":
                 talle,
                 "Pendiente",
                 str(fecha_entrega),
-                precio_total,
-                monto_pagado,
             ),
         )
         conn.commit()
@@ -355,7 +341,7 @@ elif choice == "📈 Mis Pedidos y Seguimiento":
   cursor = conn.cursor()
   cursor.execute("""
         SELECT pedidos.id, clubes.nombre, pedidos.tipo_prenda, pedidos.cantidad, 
-               pedidos.talle, pedidos.estado, pedidos.fecha, pedidos.precio_total, pedidos.monto_pagado
+               pedidos.talle, pedidos.estado, pedidos.fecha
         FROM pedidos 
         JOIN clubes ON pedidos.club_id = clubes.id
         ORDER BY pedidos.fecha ASC
@@ -367,10 +353,7 @@ elif choice == "📈 Mis Pedidos y Seguimiento":
     st.info("📭 No hay pedidos cargados en el sistema todavía.")
   else:
     for p in pedidos:
-      p_id, c_nombre, prenda, cant, talle, estado, fecha, p_total, p_pagado = p
-      p_total = p_total or 0.0
-      p_pagado = p_pagado or 0.0
-      saldo = p_total - p_pagado
+      p_id, c_nombre, prenda, cant, talle, estado, fecha = p
 
       with st.container(border=True):
         if estado == "Pendiente":
@@ -387,16 +370,10 @@ elif choice == "📈 Mis Pedidos y Seguimiento":
             f" {icono_estado} *{estado}*"
         )
 
-        col_m1, col_m2, col_m3, col_m4 = st.columns(4)
+        col_m1, col_m2, col_m3 = st.columns(3)
         col_m1.metric("Prenda", prenda)
         col_m2.metric("Cantidad", f"{cant} un. ({talle})")
         col_m3.metric("Entrega", fecha)
-        col_m4.metric(
-            "Saldo Pendiente",
-            f"${saldo:,.2f}",
-            delta=f"Total: ${p_total:,.2f}",
-            delta_color="off",
-        )
 
         st.markdown("---")
         col1, col2, col3 = st.columns([2, 2, 1])
@@ -436,17 +413,13 @@ elif choice == "📈 Mis Pedidos y Seguimiento":
                 f"📅 *Entrega estimada:* {fecha}\n"
                 f"⚙️ *Estado:* {estado}\n"
                 f"----------------------------------------\n"
-                f"💰 *Costo Total:* ${p_total:,.2f}\n"
-                f"💵 *Abonado:* ${p_pagado:,.2f}\n"
-                f"💳 *Saldo Restante:* ${saldo:,.2f}\n"
-                f"----------------------------------------\n"
                 f"¡Gracias por confiar en GOBA Sport!"
             )
             st.text_area(
                 "Texto listo para copiar:",
                 texto_whatsapp,
                 key=f"area_{p_id}",
-                height=130,
+                height=110,
             )
 
         with col3:
